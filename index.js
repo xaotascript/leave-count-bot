@@ -20,9 +20,14 @@ bot.on('left_chat_member', async (ctx) => {
 bot.hears(/\/leave_stats(@\w+)?/, async (ctx) => {
   const chatId = ctx.chat.id;
   const date = await getLeavesStats(chatId);
-  const daysWithoutLeaves = parseInt((new Date().getTime() - new Date(date).getTime()) / (1000 * 60 * 60 *24));
 
-  ctx.reply(`Days without leaves: ${daysWithoutLeaves}`);
+  if (date) {
+    const daysWithoutLeaves = parseInt((new Date().getTime() - new Date(date).getTime()) / (1000 * 60 * 60 *24));
+
+    ctx.reply(`Days without leaves: ${daysWithoutLeaves}`);
+  } else {
+    ctx.reply(`Никто пока не ливал`);
+  }
 });
 
 bot.telegram.setWebhook(host);
