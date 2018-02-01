@@ -1,5 +1,6 @@
 const Telegraf = require("telegraf");
 const {getLeavesStats, getMeme, wiriteLeave} = require('./leaves');
+const {memeUrl} = require('./config.json');
 
 const token = process.env.TOKEN;
 const host = process.env.HOST;
@@ -24,7 +25,7 @@ bot.hears(/\/leave_stats(@\w+)?/, async (ctx) => {
   if (date) {
     const daysWithoutLeaves = parseInt((new Date().getTime() - new Date(date).getTime()) / (1000 * 60 * 60 *24));
 
-    ctx.reply(`Days without leaving: ${daysWithoutLeaves}`);
+    ctx.replyWithPhoto(`${memeUrl}?days=${daysWithoutLeaves}`);
   } else {
     ctx.reply(`Никто пока не ливал`);
   }
