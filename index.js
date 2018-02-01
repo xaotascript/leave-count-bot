@@ -24,7 +24,7 @@ bot.hears(/\/leave_stats(@\w+)?/, async (ctx) => {
   if (date) {
     const daysWithoutLeaves = parseInt((new Date().getTime() - new Date(date).getTime()) / (1000 * 60 * 60 *24));
 
-    ctx.reply(`Days without leaves: ${daysWithoutLeaves}`);
+    ctx.reply(`Days without leaving: ${daysWithoutLeaves}`);
   } else {
     ctx.reply(`Никто пока не ливал`);
   }
