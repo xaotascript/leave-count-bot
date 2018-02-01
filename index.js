@@ -15,7 +15,7 @@ bot.on('left_chat_member', async (ctx) => {
 
   ctx.replyWithPhoto({
     source: getMeme()
-  })
+  });
 });
 
 bot.hears(/\/leave_stats(@\w+)?/, async (ctx) => {
@@ -25,7 +25,7 @@ bot.hears(/\/leave_stats(@\w+)?/, async (ctx) => {
   if (date) {
     const daysWithoutLeaves = parseInt((new Date().getTime() - new Date(date).getTime()) / (1000 * 60 * 60 *24));
 
-    ctx.replyWithPhoto(`${memeUrl}?days=${daysWithoutLeaves}`);
+    ctx.replyWithPhoto({url: `${memeUrl}?days=${daysWithoutLeaves}`});
   } else {
     ctx.reply(`Никто пока не ливал`);
   }
