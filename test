@@ -1,0 +1,5 @@
+db run:
+sudo docker run --name pg-leave-stats -e POSTGRES_PASSWORD=123Qwe -d postgres
+
+container info:
+sudo docker inspect ...
