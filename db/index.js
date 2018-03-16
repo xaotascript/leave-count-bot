@@ -1,21 +1,13 @@
+require('dotenv').config();
 const Sequelize = require("sequelize");
-const Chat = require('./models/Chat');
-const ChatUser = require('./models/ChatUser');
-const Date = require('./models/Date');
-const User = require('./models/User');
-const createRelations = require('./models/relations');
-const {
-  database,
-  host,
-  port,
-  user,
-  password
-} = require("./config.json");
+const LeaveModel = require('./models/Leave');
 
-const sequelizeConnection = new Sequelize(database, user, password, {
-  host,
-  port,
-  dialect: 'postgres',
+
+const sequelize = new Sequelize({
+  database: process.env.DB_NAME,
+  username: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD,
+  dialect: 'postgresql',
   pool: {
     max: 5,
     min: 0,
@@ -23,25 +15,43 @@ const sequelizeConnection = new Sequelize(database, user, password, {
   }
 });
 
-const db = {
-  Sequelize,
-  sequelize: sequelizeConnection,
-  Chat: Chat(sequelizeConnection, Sequelize),
-  ChatUser: ChatUser(sequelizeConnection, Sequelize),
-  Date: Date(sequelizeConnection, Sequelize),
-  User: User(sequelizeConnection, Sequelize)
+const Leave = LeaveModel(sequelize, Sequelize);
+
+module.exports = {
+  init: async () => {
+    try {
+      await sequelize.authenticate();
+      await sequelize.sync();
+    } catch(e) {
+      console.log(e);
+    }
+  },
+
+  writeLeave: async (chatId, userId, userFirstName, username) => {
+    await Leave.create({chatId, userId, userFirstName, username});
+  },
+
+  getDaysWithoutLeaving: async (chatId) => {
+    const lastLeave = await Leave.findOne({
+      where: {chatId},
+      order: [['createdAt', 'DESC']],
+    });
+    
+    if (!lastLeave) {
+      return 0;
+    }
+
+    const now = +new Date();
+    const leave = +lastLeave.createdAt;
+    
+    const nowDay = now / 1000 / 60 / 60 / 24;
+    const leaveDay = leave / 1000 / 60 / 60 / 24;
+
+    const daysDelta = (nowDay - leaveDay) >> 0;
+    return daysDelta < 0 ? 0 : daysDelta;
+  },
+
+  getAllChatIds: async () => Leave.findAll({
+    attributes: [[Sequelize.fn('DISTINCT', Sequelize.col('chatId')) ,'chatId']],
+  }).map(x => parseInt(x.chatId, 10)),
 };
-
-createRelations(db);
-
-(async () => {
-  try {
-    await db.sequelize.authenticate();
-    db.sequelize.sync();
-    db.Chat.findAll().then(console.log).catch(console.log);
-  } catch(e) {
-    console.log(e);
-  }
-})();
-
-module.exports = db;

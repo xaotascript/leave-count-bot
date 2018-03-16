@@ -1,35 +1,44 @@
+require('dotenv').config();
 const Telegraf = require("telegraf");
-const {getLeavesStats, getMeme, wiriteLeave} = require('./leaves');
-const {memeUrl} = require('./config.json');
+const {init: initDb, writeLeave, getDaysWithoutLeaving} = require('./db');
+const {getImgUrl} = require('./utils');
+const runCron = require('./cron');
 
-const token = process.env.TOKEN;
-const host = process.env.HOST;
-const port = process.env.PORT || 8443;
 
-const bot = new Telegraf(token);
+const token = process.env.BOT_TOKEN;
+const botName = process.env.BOT_NAME || 'LeaveCountBot';
+
+const bot = new Telegraf(token, {username: botName});
 
 bot.on('left_chat_member', async (ctx) => {
-  const chatId = ctx.chat.id;
-
-  await wiriteLeave(chatId);
-
-  ctx.replyWithPhoto({
-    source: getMeme()
-  });
-});
-
-bot.hears(/\/leave_stats(@\w+)?/, async (ctx) => {
-  const chatId = ctx.chat.id;
-  const date = await getLeavesStats(chatId);
-
-  if (date) {
-    const daysWithoutLeaves = parseInt((new Date().getTime() - new Date(date).getTime()) / (1000 * 60 * 60 *24));
-
-    ctx.replyWithPhoto({url: `${memeUrl}?days=${daysWithoutLeaves}`});
-  } else {
-    ctx.reply(`Никто пока не ливал`);
+  if (ctx.message.left_chat_member.is_bot) {
+    return;
   }
+
+  const {
+    chat: {
+      id: chatId,
+    },
+    left_chat_member: {
+      id: userId,
+      first_name: userFirstName,
+      username,
+    }
+  } = ctx.message;
+  
+  await writeLeave(chatId, userId, userFirstName, username);
+
+  return ctx.replyWithPhoto({url: getImgUrl()});
 });
 
-bot.telegram.setWebhook(host);
-bot.startWebhook("/", null, port);
+bot.command('leave_stats', async (ctx) => {
+  const daysWithoutLeaving = await getDaysWithoutLeaving(ctx.chat.id);
+  const imgUrl = getImgUrl(daysWithoutLeaving);
+  return ctx.replyWithPhoto({url: imgUrl});
+});
+
+(async () => {
+  await initDb();
+  await runCron(bot.telegram);
+  bot.startPolling();
+})();
