@@ -6,9 +6,7 @@ const runCron = require('./cron');
 
 
 const token = process.env.BOT_TOKEN;
-const botName = process.env.BOT_NAME || 'LeaveCountBot';
-
-const bot = new Telegraf(token, {username: botName});
+const bot = new Telegraf(token);
 
 bot.on('left_chat_member', async (ctx) => {
   if (ctx.message.left_chat_member.is_bot) {
@@ -39,6 +37,13 @@ bot.command('leave_stats', async (ctx) => {
 
 (async () => {
   await initDb();
+
   await runCron(bot.telegram);
+
+  const botInfo = await bot.telegram.getMe();
+  if (botInfo) {
+    bot.options.username = botInfo.username;
+  }
+
   bot.startPolling();
 })();
