@@ -17,6 +17,11 @@ const sequelize = new Sequelize({
 
 const Leave = LeaveModel(sequelize, Sequelize);
 
+const getLastLeave = async (chatId) => Leave.findOne({
+  where: {chatId},
+  order: [['createdAt', 'DESC']],
+});
+
 module.exports = {
   init: async () => {
     try {
@@ -31,11 +36,10 @@ module.exports = {
     await Leave.create({chatId, userId, userFirstName, username});
   },
 
+  getLastLeave,
+
   getDaysWithoutLeaving: async (chatId) => {
-    const lastLeave = await Leave.findOne({
-      where: {chatId},
-      order: [['createdAt', 'DESC']],
-    });
+    const lastLeave = await getLastLeave(chatId);
     
     if (!lastLeave) {
       return 0;

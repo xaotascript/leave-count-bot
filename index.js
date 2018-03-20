@@ -1,6 +1,6 @@
 require('dotenv').config();
 const Telegraf = require("telegraf");
-const {init: initDb, writeLeave, getDaysWithoutLeaving} = require('./db');
+const {init: initDb, writeLeave, getLastLeave, getDaysWithoutLeaving} = require('./db');
 const {getImgUrl} = require('./utils');
 const runCron = require('./cron');
 
@@ -27,6 +27,16 @@ bot.on('left_chat_member', async (ctx) => {
   await writeLeave(chatId, userId, userFirstName, username);
 
   return ctx.replyWithPhoto({url: getImgUrl()});
+});
+
+bot.command('who', async ctx => {
+  const lastLeave = await getLastLeave(ctx.chat.id);
+
+  if (!lastLeave) {
+    return ctx.reply('Никто не ливал');
+  }
+
+  return ctx.reply(`Последний ливнувший – ${lastLeave.userFirstName} (@${lastLeave.username})`);
 });
 
 bot.command('leave_stats', async (ctx) => {
